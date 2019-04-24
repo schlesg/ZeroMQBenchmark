@@ -6,10 +6,13 @@
 #include <zmq.hpp>
 #include <iostream>
 #include <chrono>
+#include <string>
 #include "zhelpers.hpp"
+#include "nlohmann/json.hpp"
 
 using namespace std;
 using namespace std::chrono;
+using json = nlohmann::json;
 
 static const string PUBLISHER_ENDPOINT = "tcp://localhost:4242";
 static const string IPC_ENDPOINT = "ipc:///tmp/0";
@@ -41,16 +44,18 @@ int main(int argc, char *argv[]) {
     //message >> text;
 
 
-    //cout << "[RECV] at " << ms << endl;
-
     zmq::message_t message;
     subscriber.recv(&message);
     high_resolution_clock::time_point p = high_resolution_clock::now();
     microseconds nowTime = duration_cast<microseconds>(p.time_since_epoch());
 
     auto msg = std::string(static_cast<char*>(message.data()), message.size());
-    //cout << "[RECV] at " << ms << ": \"" << std::stoll(msg) << "\"" << endl;
-    cout<< "One way latency (millisec) = " << static_cast<double>(nowTime.count() - std::stoll(msg))/1000 <<endl;
+    //char *msg = static_cast<char*>(message.data());
+    json json_msg = json::parse(msg);
+    
+
+    //cout << "[RECV] at " << ts << ": \"" << std::stoll(ts) << "\"" << endl;
+    cout<< "One way latency (millisec) = " << static_cast<double>(nowTime.count() - std::stoll(std::string(json_msg["time_stamp"])))/1000 <<endl;
   }
 
   // Unreachable, but for good measure
