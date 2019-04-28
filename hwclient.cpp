@@ -16,17 +16,23 @@ using json = nlohmann::json;
 
 static const string PUBLISH_ENDPOINT = "tcp://*:4242"; //TODO according to params
 static const string IPC_ENDPOINT = "ipc:///tmp/0";
+void my_free (void *data, void *hint)
+{
+    //  We've allocated the buffer using malloc and
+    //  at this point we deallocate it using free.
+    //free (data);
+}
 
 int main(int argc, char *argv[])
 {
-  
+  //TODO update argument via config file
   json msg;
-  msg["src"] = "client"; //TODO according to params
-  msg["seq_num"] = 0;
-  msg["time_stamp"] = 0;
-  std::string s(10* 1000 /*1KB*/, '0'); //TODO according to params
+  msg["src"] = "Pub1"; //TODO according to params
+  std::string s(1* 1000 /*1KB*/, '0'); //TODO according to params
   msg["payload"] = s.c_str();
 
+  //buffer for zeroCopy
+  auto buffer = new u_char[1000];
   //http://zeromq.org/blog:zero-copy
   // Create a publisher socket
   zmq::context_t context(1);
@@ -39,31 +45,50 @@ int main(int argc, char *argv[])
   // Pause to connect
   this_thread::sleep_for(chrono::milliseconds(1000));
 
-  for (size_t seq = 1; seq < 10000; seq++) //TODO according to params
+  std::chrono::time_point<std::chrono::high_resolution_clock> executionStartTime = high_resolution_clock::now();
+  uint64_t seq = 0;
+  while(1) //TODO according to params
   {
-    // Current time in ms
-    high_resolution_clock::time_point p = high_resolution_clock::now();
-    microseconds us = duration_cast<microseconds>(p.time_since_epoch());
-    msg["time_stamp"] = to_string(us.count());
+    seq++;
     msg["seq_num"] = seq;
+    
+    if ((duration_cast<seconds>(high_resolution_clock::now() - executionStartTime)).count() > 21) //TODO according to params
+        {
+            msg["time_stamp"] = "0"; //Notify subscriber on ending the test
+            std::cerr << "Finishing test " << endl;
+            auto msg_str = msg.dump();
+            zmq::message_t message(msg_str.size());
+            memcpy(message.data(), msg_str.data(), msg_str.size());
+            publisher.send(message);
+            return 1;
+        }
+        else
+        {
+            // Current time in ms
+            high_resolution_clock::time_point p = high_resolution_clock::now();
+            microseconds us = duration_cast<microseconds>(p.time_since_epoch());
+            msg["time_stamp"] = to_string(us.count());
+            auto msg_str = msg.dump();
+            zmq::message_t message(msg_str.size());
+            memcpy(message.data(), msg_str.data(), msg_str.size());
+            publisher.send(message);
 
+            //ZeroCopyMethod TODO
+            // high_resolution_clock::time_point p = high_resolution_clock::now();
+            // microseconds us = duration_cast<microseconds>(p.time_since_epoch());
+            // msg["time_stamp"] = to_string(us.count());
+            // auto msg_str = msg.dump();
+            // zmq_msg_t msg;
+            // void *hint = NULL;
+            // zmq_msg_init_data (&msg, (void*)msg_str.c_str(), 1000, my_free, hint);
+            // publisher.send(message);
+            
 
-    // Create a message and feed data into it
-    //  zmq::message_t message(1000);
-    //  memcpy (message.data(), text.c_str(), text.length());
-    // message << text;
+            cout << "pub " << seq << endl;
 
-    // Send it off to any subscribers
-    //publisher.send(message);
-    auto msg_str = msg.dump();
-    zmq::message_t message(msg_str.size());
-    memcpy(message.data(), msg_str.data(), msg_str.size());
-    publisher.send(message);
+        }
 
-    //s_send(publisher, text);
-    cout << "[SENT] at " << us.count() << endl;
-
-    this_thread::sleep_for(chrono::milliseconds(100)); //TODO according to params
+    this_thread::sleep_for(chrono::milliseconds(10)); //TODO according to params
   }
 
   publisher.disconnect(PUBLISH_ENDPOINT.c_str());

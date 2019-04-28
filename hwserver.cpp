@@ -9,6 +9,7 @@
 #include <string>
 #include "zhelpers.hpp"
 #include "nlohmann/json.hpp"
+#include "BenchmarkLogger.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -34,16 +35,6 @@ int main(int argc, char *argv[]) {
 
 
   while(true) {
-
-    // Receive (blocking call)
-    //zmq::message_t message;
-    //subscriber.recv (&message);
-    //auto msg = s_recv(subscriber);
-    // Read as a string
-    //string text;
-    //message >> text;
-
-
     zmq::message_t message;
     subscriber.recv(&message);
     high_resolution_clock::time_point p = high_resolution_clock::now();
@@ -54,10 +45,24 @@ int main(int argc, char *argv[]) {
     json json_msg = json::parse(msg);
     
 
-    //cout << "[RECV] at " << ts << ": \"" << std::stoll(ts) << "\"" << endl;
-    cout<< "One way latency (millisec) = " << static_cast<double>(nowTime.count() - std::stoll(std::string(json_msg["time_stamp"])))/1000 <<endl;
-  }
+   auto srcTimestamp = std::string(json_msg["time_stamp"]);
+        if (srcTimestamp.compare("0") == 0)
+        {
+            cout << "END OF TEST" << endl;
+            BenchmarkLogger::DumpResultsToFile();
+            return 1;
+        }
+        else
+        {
+            auto microsecLatency = nowTime.count() - std::stoll(srcTimestamp);
+            //cout << "One way latency (millisec) = " << static_cast<double>(microsecLatency) / 1000 << endl;
+            BenchmarkLogger::latencyResults.emplace_back(
+                json_msg["src"],
+                json_msg["seq_num"],
+                microsecLatency);
+        }
 
+}
   // Unreachable, but for good measure
   subscriber.disconnect(PUBLISHER_ENDPOINT.c_str());
   return 0;
