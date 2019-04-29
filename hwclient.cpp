@@ -9,26 +9,76 @@
 #include <string>
 #include "zhelpers.hpp"
 #include "nlohmann/json.hpp"
+#include <boost/format.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/program_options.hpp>
+#include <boost/format.hpp>
+#include <string>
 
+using json = nlohmann::json;
 using namespace std;
 using namespace std::chrono;
-using json = nlohmann::json;
+namespace po = boost::program_options;
 
-static const string PUBLISH_ENDPOINT = "tcp://*:4242"; //TODO according to params
-static const string IPC_ENDPOINT = "ipc:///tmp/0";
+// static const std::string PUBLISH_ENDPOINT = "tcp://*:4242"; //TODO according to params
+// static const std::string IPC_ENDPOINT = "ipc:///tmp/0";
 void my_free (void *data, void *hint)
 {
     //  We've allocated the buffer using malloc and
     //  at this point we deallocate it using free.
     //free (data);
 }
+class Config
+{
+public:
+    static std::string pubEndpoint;
+    static std::string publisherUniqueName;
+    static uint64_t payloadSize;
+    static int64_t executionTime;
+    static double pubRate;
+};
+
+std::string Config::pubEndpoint;
+std::string Config::publisherUniqueName;
+uint64_t Config::payloadSize;
+int64_t Config::executionTime;
+double Config::pubRate;
 
 int main(int argc, char *argv[])
 {
+    po::options_description description("Options");
+    description.add_options()("help", "produce help message")
+    ("PubEP", po::value(&Config::pubEndpoint)->default_value("ipc:///tmp/0"), "Publish endpoint (e.g. ipc:///tmp/0 or tcp://*:4242")
+    ("pubUniqueName", po::value(&Config::publisherUniqueName)->default_value("pub1"), "Publisher Unique Name")
+    ("msgLength", po::value(&Config::payloadSize)->default_value(100), "Message Length (bytes)")
+    ("executionTime", po::value(&Config::executionTime)->default_value(100), "Benchmark Execution Time (sec)")
+    ("pubRate", po::value(&Config::pubRate)->default_value(100), "Publishing rate");
+
+    po::variables_map vm;
+
+    try
+    {
+        po::store(po::parse_command_line(argc, argv, description), vm);
+        po::notify(vm);
+    }
+    catch (const po::error &e)
+    {
+        std::cerr << e.what() << "\n";
+        return EXIT_FAILURE;
+    }
+
+    if (vm.count("help"))
+    {
+        std::cout << description << "\n";
+        return EXIT_SUCCESS;
+    }
+
+
+
   //TODO update argument via config file
   json msg;
-  msg["src"] = "Pub1"; //TODO according to params
-  std::string s(1* 1000 /*1KB*/, '0'); //TODO according to params
+  msg["src"] = Config::publisherUniqueName;
+  std::string s(Config::payloadSize, '0');
   msg["payload"] = s.c_str();
 
   //buffer for zeroCopy
@@ -39,20 +89,20 @@ int main(int argc, char *argv[])
   zmq::socket_t publisher(context, ZMQ_PUB);
   
   // Open the connection
-  cout << "Binding to " << IPC_ENDPOINT << "..." << endl;
-  publisher.bind(IPC_ENDPOINT.c_str());
+  cout << "Binding to " << Config::pubEndpoint << "..." << endl;
+  publisher.bind(Config::pubEndpoint.c_str());
 
   // Pause to connect
   this_thread::sleep_for(chrono::milliseconds(1000));
 
   std::chrono::time_point<std::chrono::high_resolution_clock> executionStartTime = high_resolution_clock::now();
   uint64_t seq = 0;
-  while(1) //TODO according to params
+  while(1)
   {
     seq++;
     msg["seq_num"] = seq;
     
-    if ((duration_cast<seconds>(high_resolution_clock::now() - executionStartTime)).count() > 21) //TODO according to params
+    if ((duration_cast<seconds>(high_resolution_clock::now() - executionStartTime)).count() > Config::executionTime)
         {
             msg["time_stamp"] = "0"; //Notify subscriber on ending the test
             std::cerr << "Finishing test " << endl;
@@ -83,14 +133,16 @@ int main(int argc, char *argv[])
             // zmq_msg_init_data (&msg, (void*)msg_str.c_str(), 1000, my_free, hint);
             // publisher.send(message);
             
-
-            cout << "pub " << seq << endl;
+            if (seq % 100 == 0)
+            {
+                std::cerr << "pub " << seq << endl;
+            }
 
         }
 
-    this_thread::sleep_for(chrono::milliseconds(10)); //TODO according to params
+    this_thread::sleep_for(chrono::milliseconds(u_int64_t(1000 * (1 / Config::pubRate))));
   }
 
-  publisher.disconnect(PUBLISH_ENDPOINT.c_str());
+  publisher.disconnect(Config::pubEndpoint.c_str());
   return 0;
 }
