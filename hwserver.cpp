@@ -25,13 +25,9 @@ int main(int argc, char *argv[]) {
   zmq::socket_t subscriber  (context, ZMQ_SUB);
   subscriber.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
-  // Subscribe to the default channel
-  //socket.subscribe("");
-
   // Connect to the publisher
   cout << "Connecting to " << IPC_ENDPOINT << "..." << endl;
   subscriber.connect(IPC_ENDPOINT.c_str());
-  //subscriber.setsockopt(ZMQ_SUBSCRIBE, "");
 
 
   while(true) {
@@ -41,6 +37,7 @@ int main(int argc, char *argv[]) {
     microseconds nowTime = duration_cast<microseconds>(p.time_since_epoch());
 
     auto msg = std::string(static_cast<char*>(message.data()), message.size());
+    // cout<<msg<<endl;
     //char *msg = static_cast<char*>(message.data());
     json json_msg = json::parse(msg);
     
@@ -50,7 +47,7 @@ int main(int argc, char *argv[]) {
         {
             cout << "END OF TEST" << endl;
             BenchmarkLogger::DumpResultsToFile();
-            return 1;
+            break;
         }
         else
         {
@@ -63,8 +60,7 @@ int main(int argc, char *argv[]) {
         }
 
 }
-  // Unreachable, but for good measure
-  subscriber.disconnect(PUBLISHER_ENDPOINT.c_str());
+  subscriber.disconnect(IPC_ENDPOINT.c_str());
   return 0;
 }
 

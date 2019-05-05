@@ -75,22 +75,24 @@ int main(int argc, char *argv[])
 
 
 
-  //TODO update argument via config file
+  //JSON Message
   json msg;
   msg["src"] = Config::publisherUniqueName;
   std::string s(Config::payloadSize, '0');
   msg["payload"] = s.c_str();
-
-  //buffer for zeroCopy
-  auto buffer = new u_char[1000];
-  //http://zeromq.org/blog:zero-copy
-  // Create a publisher socket
+  
+  // Open the connection
   zmq::context_t context(1);
   zmq::socket_t publisher(context, ZMQ_PUB);
   
-  // Open the connection
   cout << "Binding to " << Config::pubEndpoint << "..." << endl;
   publisher.bind(Config::pubEndpoint.c_str());
+  
+  //C style
+  // void *Ccontext = zmq_ctx_new ();
+  // void *Cpublisher = zmq_socket (Ccontext, ZMQ_PUB);
+  // zmq_bind (Cpublisher, Config::pubEndpoint.c_str());
+
 
   // Pause to connect
   this_thread::sleep_for(chrono::milliseconds(1000));
@@ -121,17 +123,19 @@ int main(int argc, char *argv[])
             auto msg_str = msg.dump();
             zmq::message_t message(msg_str.size());
             memcpy(message.data(), msg_str.data(), msg_str.size());
-            publisher.send(message);
+            publisher.send(message, ZMQ_DONTWAIT);
 
-            //ZeroCopyMethod TODO
+            //ZeroCopyMethod
             // high_resolution_clock::time_point p = high_resolution_clock::now();
             // microseconds us = duration_cast<microseconds>(p.time_since_epoch());
             // msg["time_stamp"] = to_string(us.count());
             // auto msg_str = msg.dump();
-            // zmq_msg_t msg;
+            // zmq_msg_t zmqMsg;
             // void *hint = NULL;
-            // zmq_msg_init_data (&msg, (void*)msg_str.c_str(), 1000, my_free, hint);
-            // publisher.send(message);
+            // //zmq_msg_init_size (&zmqMsg, msg_str.size();
+            // zmq_msg_init_data (&zmqMsg, (void*)msg_str.c_str(), msg_str.size(), my_free, hint);
+            // zmq_send (Cpublisher, &zmqMsg,0, ZMQ_DONTWAIT);
+
             
             if (seq % 100 == 0)
             {
