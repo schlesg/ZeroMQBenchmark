@@ -30,16 +30,23 @@ find_library(ZeroMQ_LIBRARY
 add_executable(ZMQPub hwclient.cpp)
 add_executable(ZMQSub hwserver.cpp)
 
+add_executable(ZMQEchoer echoer.cpp)
+add_executable(ZMQInitiator initiator.cpp)
+
 # set(hwserver_SOURCE_FILES hwserver.cpp)
 # add_executable(hwserver ${hwserver_SOURCE_FILES})
 
 ## at the 0mq library to our link directive
 target_link_libraries(ZMQPub PUBLIC ${ZeroMQ_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} nlohmann_json ${Boost_LIBRARIES})
-target_link_libraries(ZMQSub PUBLIC ${ZeroMQ_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} nlohmann_json)
+target_link_libraries(ZMQSub PUBLIC ${ZeroMQ_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} nlohmann_json ${Boost_LIBRARIES})
+target_link_libraries(ZMQEchoer PUBLIC ${ZeroMQ_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} nlohmann_json ${Boost_LIBRARIES})
+target_link_libraries(ZMQInitiator PUBLIC ${ZeroMQ_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} nlohmann_json ${Boost_LIBRARIES})
 
 ## add the include directory to our compile directives
 # target_include_directories(hwclient PUBLIC "./")
 
 target_include_directories(ZMQPub PUBLIC ${ZeroMQ_INCLUDE_DIR})
 target_include_directories(ZMQSub PUBLIC ${ZeroMQ_INCLUDE_DIR})
+target_include_directories(ZMQEchoer PUBLIC ${ZeroMQ_INCLUDE_DIR})
+target_include_directories(ZMQInitiator PUBLIC ${ZeroMQ_INCLUDE_DIR})
 
