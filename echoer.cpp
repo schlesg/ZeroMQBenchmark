@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
   po::options_description description("Options");
   description.add_options()
   ("help", "produce help message")
-  ("PubEP", po::value(&Config::pubEndpoint)->default_value("ipc:///tmp/pongTopic"), "Publish endpoint (e.g. ipc:///tmp/pongTopic or tcp://*:4241")
-  ("SubEP", po::value(&Config::subEndpoint)->default_value("ipc:///tmp/pingTopic"), "Subscribe endpoint (e.g. ipc:///tmp/pingTopic or tcp://locahost:4242");
+  ("PubEP", po::value(&Config::pubEndpoint)->default_value("ipc:///tmp/pongTopic"), "Publish (connet) pong to endpoint (e.g. ipc:///tmp/pongTopic or tcp://127.0.0.1:4241")
+  ("SubEP", po::value(&Config::subEndpoint)->default_value("ipc:///tmp/pingTopic"), "Subscribe (bind) ping from endpoint (e.g. ipc:///tmp/pingTopic or tcp://127.0.0.1:4242");
 
   po::variables_map vm;
 
@@ -69,21 +69,21 @@ int main(int argc, char *argv[])
   zmq::socket_t subscriber(context, ZMQ_SUB);
   zmq::socket_t publisher(context, ZMQ_PUB);
 
-  cout << "Sub connecting to " << Config::subEndpoint << "..." << endl;
+  cout << "Sub bind to " << Config::subEndpoint << "..." << endl;
   try {
     subscriber.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-    subscriber.connect(Config::subEndpoint.c_str());
+    subscriber.bind(Config::subEndpoint.c_str());
   }
   catch (const zmq::error_t& err){
-    cout<<"subscriber.connect error - "<<err.what() <<endl;
+    cout<<"subscriber.bind error - "<<err.what() <<endl;
     return 0 ;
   } 
-  cout << "Pub binding to " << Config::pubEndpoint << "..." << endl;
+  cout << "Pub connect to " << Config::pubEndpoint << "..." << endl;
   try{
-    publisher.bind(Config::pubEndpoint.c_str());
+    publisher.connect(Config::pubEndpoint.c_str());
   }
   catch (const zmq::error_t& err){
-    cout<<"publisher.bind error - "<<err.what() <<endl;
+    cout<<"publisher.connect error - "<<err.what() <<endl;
     return 0 ;
   }
 
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   }
 
   try {
-    subscriber.disconnect(Config::subEndpoint.c_str());
+    //subscriber.disconnect(Config::subEndpoint.c_str());
     //publisher.unbind(Config::pubEndpoint.c_str());
   }
   catch (const zmq::error_t& err){
