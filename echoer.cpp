@@ -30,12 +30,11 @@ class Config
 public:
   static std::string pubEndpoint;
   static std::string subEndpoint;
-  static std::string publisherUniqueName;
 };
 
 std::string Config::pubEndpoint;
 std::string Config::subEndpoint;
-std::string Config::publisherUniqueName;
+
 
 
 int main(int argc, char *argv[])
