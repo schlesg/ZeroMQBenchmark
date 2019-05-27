@@ -1,7 +1,3 @@
-/**
-* Example of ZeroMQ pub/sub usage for C++11.
-*/
-
 #include <zmq.hpp>
 #include <iostream>
 #include <chrono>
@@ -27,6 +23,7 @@ public:
   static std::string pubEndpoint;
   static std::string subEndpoint;
   static std::string publisherUniqueName;
+  static uint64_t updateRate;
   static uint64_t payloadSize;
   static int64_t roundtripCount;
 };
@@ -34,6 +31,7 @@ public:
 std::string Config::pubEndpoint;
 std::string Config::subEndpoint;
 std::string Config::publisherUniqueName;
+uint64_t Config::updateRate;
 uint64_t Config::payloadSize;
 int64_t Config::roundtripCount;
 
@@ -45,7 +43,11 @@ int main(int argc, char *argv[])
   ("PubEP", po::value(&Config::pubEndpoint)->default_value("ipc:///tmp/pingTopic"), "Publish ping (connect) to endpoint(s) (e.g. ipc:///tmp/pingTopic or tcp://127.0.0.1:4242")
   ("SubEP", po::value(&Config::subEndpoint)->default_value("ipc:///tmp/pongTopic"), "Subscribe pong (bind) from endpoint (e.g. ipc:///tmp/pongTopic or tcp://127.0.0.1:4241")
   ("msgLength", po::value(&Config::payloadSize)->default_value(100), "Message Length (bytes)")
-  ("roundtripCount", po::value(&Config::roundtripCount)->default_value(1000), "ping-pong intervals");
+  ("roundtripCount", po::value(&Config::roundtripCount)->default_value(1000), "ping-pong intervals")
+  ("pubName", po::value(&Config::publisherUniqueName)->default_value("Initiator"), "publisher name. Name 'Dummy' will cause the echoer to not echo messages")
+  ("updateRate", po::value(&Config::updateRate)->default_value(0), "update rate (for general load purposes only)")
+  ;
+  
   po::variables_map vm;
 
   try
@@ -82,7 +84,6 @@ int main(int argc, char *argv[])
 
   vector<string> pubEndpoints;
   boost::split(pubEndpoints,Config::pubEndpoint,boost::is_any_of(","));
-
   uint64_t numSubscribers = pubEndpoints.size();
   for (size_t i = 0; i < pubEndpoints.size(); i++){
     cout << "Pub connecting to " << pubEndpoints[i] << endl;
@@ -93,31 +94,43 @@ int main(int argc, char *argv[])
       cout<<"publisher.bind error - "<<err.what() <<endl;
       return 0 ;
     }
-}
+  }
   //Message
-  zmq::message_t message(Config::payloadSize);
-  zmq::message_t receivedMessage(Config::payloadSize);
-  memset(message.data(), 1, Config::payloadSize);
-
+  //zmq::message_t message(Config::payloadSize);
+  //zmq::message_t receivedMessage(Config::payloadSize);
+  //memset(message.data(), 1, Config::payloadSize);
+  //memcpy(message.data(), Config::publisherUniqueName.c_str(), Config::publisherUniqueName.size() + 1);
   // Pause to connect
-  this_thread::sleep_for(chrono::milliseconds(1000));
+  this_thread::sleep_for(chrono::seconds(2));
+  cout << "Running scenario ..." << endl;
 
   std::chrono::time_point<std::chrono::high_resolution_clock> executionStartTime = high_resolution_clock::now();
-  for (size_t i = 0; i != Config::roundtripCount; i++)
+  for (size_t i = 1; i != Config::roundtripCount; i++)
   {
     //cout<<i<<endl;
+    zmq::message_t message(Config::payloadSize); //Must put message within loop
+    memcpy(message.data(), Config::publisherUniqueName.c_str(), Config::publisherUniqueName.size() + 1);
     publisher.send(message, ZMQ_DONTWAIT);
-    auto msg = std::string(static_cast<char*>(message.data()), message.size());
 
-    for (size_t jj = 0; jj < numSubscribers; ++jj)
+    if (Config::updateRate != 0) //only for general load puropses
     {
-      // Wait for echoed message from each subscriber
-      subscriber.recv(&message);
-      if (message.size() != Config::payloadSize)
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000 / Config::updateRate));
+      //cout<<i<<endl;
+    }
+    
+    else{
+      for (size_t jj = 0; jj < numSubscribers; ++jj)
       {
-        std::cout << "Message of incorrect size received: " << msg.size()
-                  << std::endl;
-        return -1;
+        // Wait for echoed message from each subscriber
+        zmq::message_t receivedMessage;
+        subscriber.recv(&receivedMessage);
+        if (receivedMessage.size() != Config::payloadSize)
+        {
+          auto msg = std::string(static_cast<char*>(receivedMessage.data()), receivedMessage.size());
+          std::cout << "Message of incorrect size received: " << msg.size()
+                    << std::endl;
+          return -1;
+        }
       }
     }
   }
@@ -127,6 +140,7 @@ int main(int argc, char *argv[])
   auto diff = std::chrono::duration_cast<std::chrono::microseconds>(executionEndTime - executionStartTime);
   cout << "Average latency = " << diff.count() / Config::roundtripCount << " microseconds with roundtrip count of " << Config::roundtripCount << endl;
 
+  std::cout << "Shutting down..." << std::endl;
   try {
     //subscriber.disconnect(Config::subEndpoint.c_str());
     //publisher.unbind(Config::pubEndpoint.c_str());
