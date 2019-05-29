@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
   //Export average latency
   std::chrono::time_point<std::chrono::high_resolution_clock> executionEndTime = high_resolution_clock::now();
   auto diff = std::chrono::duration_cast<std::chrono::microseconds>(executionEndTime - executionStartTime);
-  cout << "Average latency = " << diff.count() / Config::roundtripCount << " microseconds with roundtrip count of " << Config::roundtripCount << endl;
+  cout << "Average latency = " << diff.count() / Config::roundtripCount / 2 << " microseconds with roundtrip count of " << Config::roundtripCount << endl;
 
   std::cout << "Shutting down..." << std::endl;
   try {
