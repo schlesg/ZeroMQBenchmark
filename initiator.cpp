@@ -124,6 +124,7 @@ int main(int argc, char *argv[])
         // Wait for echoed message from each subscriber
         zmq::message_t receivedMessage;
         subscriber.recv(&receivedMessage);
+        //cout<<"Received #" << jj <<endl;
         if (receivedMessage.size() != Config::payloadSize)
         {
           auto msg = std::string(static_cast<char*>(receivedMessage.data()), receivedMessage.size());
