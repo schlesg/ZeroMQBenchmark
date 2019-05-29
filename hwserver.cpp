@@ -18,52 +18,50 @@ using json = nlohmann::json;
 static const string PUBLISHER_ENDPOINT = "tcp://localhost:4242";
 static const string IPC_ENDPOINT = "ipc:///tmp/0";
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
   // Create a subscriber socket
-  zmq::context_t context (1);
-  zmq::socket_t subscriber  (context, ZMQ_SUB);
+  zmq::context_t context(1);
+  zmq::socket_t subscriber(context, ZMQ_SUB);
   subscriber.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
   // Connect to the publisher
   cout << "Connecting to " << IPC_ENDPOINT << "..." << endl;
   subscriber.connect(IPC_ENDPOINT.c_str());
 
-
-  while(true) {
+  while (true)
+  {
     zmq::message_t message;
     subscriber.recv(&message);
     high_resolution_clock::time_point p = high_resolution_clock::now();
     microseconds nowTime = duration_cast<microseconds>(p.time_since_epoch());
 
-    auto msg = std::string(static_cast<char*>(message.data()), message.size());
+    auto msg = std::string(static_cast<char *>(message.data()), message.size());
     // cout<<msg<<endl;
     //char *msg = static_cast<char*>(message.data());
     json json_msg = json::parse(msg);
-    
 
-   auto srcTimestamp = std::string(json_msg["time_stamp"]);
-        if (srcTimestamp.compare("0") == 0)
-        {
-            cout << "END OF TEST" << endl;
-            BenchmarkLogger::DumpResultsToFile();
-            break;
-        }
-        else
-        {
-            auto microsecLatency = nowTime.count() - std::stoll(srcTimestamp);
-            //cout << "One way latency (millisec) = " << static_cast<double>(microsecLatency) / 1000 << endl;
-            BenchmarkLogger::latencyResults.emplace_back(
-                json_msg["src"],
-                json_msg["seq_num"],
-                microsecLatency);
-        }
-
-}
+    auto srcTimestamp = std::string(json_msg["time_stamp"]);
+    if (srcTimestamp.compare("0") == 0)
+    {
+      cout << "END OF TEST" << endl;
+      BenchmarkLogger::DumpResultsToFile();
+      break;
+    }
+    else
+    {
+      auto microsecLatency = nowTime.count() - std::stoll(srcTimestamp);
+      //cout << "One way latency (millisec) = " << static_cast<double>(microsecLatency) / 1000 << endl;
+      BenchmarkLogger::latencyResults.emplace_back(
+          json_msg["src"],
+          json_msg["seq_num"],
+          microsecLatency);
+    }
+  }
   subscriber.disconnect(IPC_ENDPOINT.c_str());
   return 0;
 }
-
 
 // //
 // //  Hello World server in C++
