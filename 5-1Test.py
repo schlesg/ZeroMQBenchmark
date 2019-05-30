@@ -6,11 +6,12 @@ import os
 commandList = []
 commandList.append("./ZMQEchoer --SubEP ipc:///tmp/pingTopic1 --PubEP ipc:///tmp/pongTopic1")
 
-commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --SubEP ipc:///tmp/pongTopic1 --msgLength 10000")
-commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength 10000")
-commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength 10000")
-commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength 10000")
-commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength 10000")
+msgLen = '10000'
+commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --SubEP ipc:///tmp/pongTopic1 --msgLength " + msgLen)
+commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength " + msgLen)
+commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength " + msgLen)
+commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength " + msgLen)
+commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --pubName Dummy --msgLength " + msgLen)
 
 # commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --SubEP ipc:///tmp/pongTopic3 --msgLength 50")
 # commandList.append("./ZMQInitiator --PubEP ipc:///tmp/pingTopic1 --SubEP ipc:///tmp/pongTopic4 --msgLength 50")
