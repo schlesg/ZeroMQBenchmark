@@ -29,6 +29,7 @@ git clone https://github.com/nlohmann/json
 apt install python3
 
 ### Installing
+git clone https://github.com/schlesg/ZeroMQBenchmark.git  
 mkdir build  
 cd build  
 cmake ..  
