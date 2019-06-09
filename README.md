@@ -12,11 +12,11 @@ These instructions will get you a copy of the project up and running on your loc
 apt-get install libzmq3-dev  
 
 #### Json Parser  
-git clone https://github.com/nlohmann/json 
-    cd json 
-    cmake . 
-    make 
-    make install
+git clone https://github.com/nlohmann/json  
+    cd json  
+    cmake .  
+    make  
+    make install  
 
 #### Boost  
    wget -O boost_1_69_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.69.0/boost_1_69_0.tar.gz/download  
