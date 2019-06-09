@@ -38,7 +38,8 @@ make
 ## Running the tests
 
 * Can run the ZMQInitiator or the ZMQEchoer directly:
-  - ./ZMQInitiator --PubEP tcp://127.0.0.1:4242,tcp://127.0.0.1:4243 --SubEP tcp://127.0.0.1:4241 -msgLength 1000  
+  - ./ZMQInitiator --PubEP tcp://127.0.0.1:4242,tcp://127.0.0.1:4243 --SubEP tcp://127.0.0.1:4241 --msgLength 1000
+  - ./ZMQEchoer 
 * More complex test are defined within the py files (e.g. IPC-1-5Test.py).
 
 ## License
